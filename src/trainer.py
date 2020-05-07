@@ -1,23 +1,15 @@
 from keras.models import Sequential
 from keras.layers import Flatten, Dense
-
-from data_loader import load_dataset, load_datasets
 import numpy as np
 
-datasets = [
-    "track1_forward",
-    "track1_curves",
-    "track1_recovery",
-    "track1_reverse",
-    "track2_forward",
-    "track2_reverse",
-]
-data_dir = "data/"
+from data_loader import load_dataset, load_datasets
+from parameters import Parameters
 
 
 if __name__ == "__main__":
+    parameters = Parameters()
 
-    images, measurements = load_datasets(data_dir, datasets, limit=500, debug=False)
+    images, measurements = load_datasets(parameters, limit=500, debug=False)
 
     X_train = np.array(images)
     y_train = np.array(measurements)

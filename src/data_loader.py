@@ -5,16 +5,19 @@ import cv2
 
 def read_from_csv(fname):
     lines = []
-    with open(fname) as csvfile:
-        reader = csv.reader(csvfile)
-        for line in reader:
-            lines.append(line)
+    try:
+        with open(fname) as csvfile:
+            reader = csv.reader(csvfile)
+            for line in reader:
+                lines.append(line)
+    except IOError as e:
+        print("- !! Could not load csv: {}".format(fname))
     return lines
 
 
-def read_blacklist(data_dir):
+def read_blacklist(parameters):
     blacklist = []
-    fname = os.path.join(data_dir, "blacklist.txt")
+    fname = parameters.blacklist_fname
     with open(fname) as csvfile:
         reader = csv.reader(csvfile)
         for line in reader:
@@ -46,17 +49,19 @@ def is_in_blacklist(blacklist, fname):
     return False
 
 
-def load_dataset(data_dir, set_name, limit=None, debug=False):
+def load_dataset(parameters, set_name, limit=None, debug=False):
     print("Loading dataset: {}:".format(set_name))
+
     images = []
     measurements = []
 
-    img_basename = os.path.join(data_dir, set_name, "IMG")
-    csv_fname = os.path.join(data_dir, set_name, "driving_log.csv")
+    img_basename = os.path.join(parameters.data_dir, set_name, "IMG")
+    csv_fname = os.path.join(parameters.data_dir, set_name, "driving_log.csv")
     print("- Log file: {}:".format(csv_fname))
 
-    blacklist = read_blacklist(data_dir)
+    blacklist = read_blacklist(parameters)
     blacklisted = []
+
     csv_lines = read_from_csv(csv_fname)
     for line in csv_lines:
         fname_center = os.path.join(img_basename, line[0].split("/")[-1])
@@ -90,38 +95,44 @@ def load_dataset(data_dir, set_name, limit=None, debug=False):
         if limit and len(images) >= limit:
             break
 
-    print("- Total images: {}.".format(len(csv_lines)))
-    print(
-        "- Loaded #{}, and #{} are in blacklist.".format(len(images), len(blacklisted))
-    )
+    if images:
+        print("- Total images: {}.".format(len(csv_lines)))
+        print(
+            "- Loaded #{} images, and other #{} are blacklisted.".format(
+                len(images), len(blacklisted)
+            )
+        )
     return images, measurements
 
 
-def load_datasets(data_dir, datasets, limit=None, debug=False):
+def load_datasets(parameters, limit=None, debug=False):
+    print("=" * 80)
+    print("Datasets:")
+    print("=" * 80)
+    datasets = parameters.datasets
+
     all_images = []
     all_measurements = []
     for dataset in datasets:
-        images, measurements = load_dataset(data_dir, dataset, limit=limit, debug=debug)
+        images, measurements = load_dataset(
+            parameters, dataset, limit=limit, debug=debug
+        )
         all_images.extend(images)
         all_measurements.extend(measurements)
 
-    print("Loaded #{} datasets and #{} images.".format(len(datasets), len(all_images)))
+    print("")
+    print("Loaded #{} images from #{} datasets.".format(len(all_images), len(datasets)))
+    print("")
     return all_images, all_measurements
 
 
 if __name__ == "__main__":
-    datasets = [
-        "track1_forward",
-        "track1_curves",
-        "track1_recovery",
-        "track1_reverse",
-        "track2_forward",
-        "track2_reverse",
-    ]
-    data_dir = "data/"
+    from parameters import Parameters
+
+    parameters = Parameters()
 
     # single dataset
-    # images, measurements = load_dataset(data_dir, datasets[0], debug=True)
+    # images, measurements = load_dataset(parameters, parameters.datasets[0], debug=True)
 
     # all of them
-    images, measurements = load_datasets(data_dir, datasets, limit=100, debug=False)
+    images, measurements = load_datasets(parameters, limit=100, debug=False)
