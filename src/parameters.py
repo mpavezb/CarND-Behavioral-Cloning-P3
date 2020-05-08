@@ -10,13 +10,13 @@ class Parameters:
         "track2_forward",
         "track2_reverse",
     ]
-    data_dir = "data/"
-    data_dir = "/home/mpavezb/data/"
 
     def __init__(self):
         this_dir = os.path.dirname(os.path.realpath(__file__))
         self.project_path = os.path.realpath(this_dir + "/..")
         self.blacklist_fname = os.path.join(self.project_path, "blacklist.txt")
+        self.data_dir = os.path.join(self.project_path, "data/")
+        # self.data_dir = "/opt/mpavezb/data/"
 
         print("=" * 80)
         print("Parameters:")
