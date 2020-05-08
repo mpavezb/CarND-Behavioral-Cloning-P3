@@ -34,24 +34,15 @@ def is_in_blacklist(blacklist, fname):
     strip_name = fname.split("/")[-1]
     strip_name = strip_name.split(".")[0]
     strip_name = strip_name.replace("center_", "")
-    strip_name = strip_name.replace("right_", "")
-    strip_name = strip_name.replace("left_", "")
-    # print("fname: {}".format(fname))
-    # print("strip_name: {}".format(strip_name))
     for entry in blacklist:
         start_name = entry[0]
         end_name = entry[1]
         if start_name <= strip_name and strip_name <= end_name:
-            # print(
-            #    " - File {} is blacklisted by rule [{}, {}].".format(
-            #        fname, start_name, end_name
-            #    )
-            # )
             return True
     return False
 
 
-def load_dataset(parameters, set_name, limit=None, debug=False):
+def load_dataset(parameters, set_name, debug=False):
     print("Loading dataset: {}:".format(set_name))
 
     images = []
@@ -74,16 +65,29 @@ def load_dataset(parameters, set_name, limit=None, debug=False):
         value_break = float(line[5])
         value_speed = float(line[6])
 
-        image_fname = fname_center
-
-        if is_in_blacklist(blacklist, image_fname):
-            blacklisted.append(image_fname)
+        if is_in_blacklist(blacklist, fname_center):
+            blacklisted.append(fname_center)
+            blacklisted.append(fname_left)
+            blacklisted.append(fname_right)
             continue
 
+        # create adjusted steering measurements for the side camera images
+        correction = parameters.multicam_steering_correction
+        steering_center = value_steering_angle
+        steering_left = steering_center + correction
+        steering_right = steering_center - correction
+
         # image = cv2.imread(image_fname)
-        image = ndimage.imread(image_fname)
-        images.append(image)
-        measurements.append(value_steering_angle)
+        image_center = ndimage.imread(fname_center)
+        image_left = ndimage.imread(fname_left)
+        image_right = ndimage.imread(fname_right)
+
+        images.append(image_center)
+        images.append(image_left)
+        images.append(image_right)
+        measurements.append(steering_center)
+        measurements.append(steering_left)
+        measurements.append(steering_right)
 
         if debug:
             print("- center: {}".format(fname_center))
@@ -95,6 +99,7 @@ def load_dataset(parameters, set_name, limit=None, debug=False):
             print("- speed: {:.2f} [0.0, 30.0]".format(value_speed))
             break
 
+        limit = parameters.IMAGE_LIMIT_PER_SET
         if limit and len(images) >= limit:
             break
 
@@ -108,7 +113,7 @@ def load_dataset(parameters, set_name, limit=None, debug=False):
     return images, measurements
 
 
-def load_datasets(parameters, limit=None, debug=False):
+def load_datasets(parameters, debug=False):
     print("=" * 80)
     print("Datasets:")
     print("=" * 80)
@@ -117,9 +122,7 @@ def load_datasets(parameters, limit=None, debug=False):
     all_images = []
     all_measurements = []
     for dataset in datasets:
-        images, measurements = load_dataset(
-            parameters, dataset, limit=limit, debug=debug
-        )
+        images, measurements = load_dataset(parameters, dataset, debug=debug)
         all_images.extend(images)
         all_measurements.extend(measurements)
 
@@ -138,4 +141,4 @@ if __name__ == "__main__":
     # images, measurements = load_dataset(parameters, parameters.datasets[0], debug=True)
 
     # all of them
-    images, measurements = load_datasets(parameters, limit=100, debug=False)
+    images, measurements = load_datasets(parameters)

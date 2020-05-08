@@ -11,6 +11,10 @@ class Parameters:
         "track2_reverse",
     ]
 
+    multicam_steering_correction = 0.2
+    IMAGE_LIMIT_PER_SET = 50
+    N_EPOCHS = 2
+
     def __init__(self):
         this_dir = os.path.dirname(os.path.realpath(__file__))
         self.project_path = os.path.realpath(this_dir + "/..")
@@ -24,4 +28,9 @@ class Parameters:
         print(" - Project Path: {}".format(self.project_path))
         print(" - Blacklist file: {}".format(self.blacklist_fname))
         print(" - Data Dir: {}".format(self.data_dir))
+        print(
+            " - Multicam Steering Correction: {}".format(
+                self.multicam_steering_correction
+            )
+        )
         print("")

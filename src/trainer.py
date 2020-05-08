@@ -9,15 +9,10 @@ from keras.layers import MaxPooling2D
 from data_loader import load_dataset, load_datasets
 from parameters import Parameters
 
-IMAGE_LIMIT_PER_SET = 500
-N_EPOCHS = 2
-
 if __name__ == "__main__":
     parameters = Parameters()
 
-    images, measurements = load_datasets(
-        parameters, limit=IMAGE_LIMIT_PER_SET, debug=False
-    )
+    images, measurements = load_datasets(parameters)
 
     # duplicate the data
     # create balanced data set
@@ -44,5 +39,7 @@ if __name__ == "__main__":
     model.add(Dense(1))
 
     model.compile(loss="mse", optimizer="adam")
-    model.fit(X_train, y_train, validation_split=0.2, shuffle=True, epochs=N_EPOCHS)
+    model.fit(
+        X_train, y_train, validation_split=0.2, shuffle=True, epochs=parameters.N_EPOCHS
+    )
     model.save("model.h5")
