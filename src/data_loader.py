@@ -1,6 +1,8 @@
 import os.path
 import csv
-import cv2
+
+# import cv2
+from scipy import ndimage
 
 
 def read_from_csv(fname):
@@ -78,7 +80,8 @@ def load_dataset(parameters, set_name, limit=None, debug=False):
             blacklisted.append(image_fname)
             continue
 
-        image = cv2.imread(image_fname)
+        # image = cv2.imread(image_fname)
+        image = ndimage.imread(image_fname)
         images.append(image)
         measurements.append(value_steering_angle)
 
