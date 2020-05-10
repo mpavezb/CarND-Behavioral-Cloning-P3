@@ -1,144 +1,148 @@
 import os.path
 import csv
 
-# import cv2
-from scipy import ndimage
+from parameters import Parameters
+from processing import Sample
 
 
-def read_from_csv(fname):
-    lines = []
-    try:
-        with open(fname) as csvfile:
+class Blacklist:
+    def __init__(self, fname):
+        self.fname = fname
+        self.blacklist = self.load()
+        self.not_valid_count = 0
+
+    def load(self):
+        print(" - Loading blacklist from file: {}:".format(self.fname))
+        blacklist = []
+        with open(self.fname) as csvfile:
             reader = csv.reader(csvfile)
             for line in reader:
-                lines.append(line)
-    except IOError as e:
-        print("- !! Could not load csv: {}".format(fname))
-    return lines
+                line_str = "".join(line)
+                if len(line) == 0 or line_str[0] == "#":
+                    continue
+                blacklist.append(line)
+        return blacklist
+
+    def is_valid(self, fname):
+        strip_name = fname.split("/")[-1]
+        strip_name = strip_name.split(".")[0]
+        strip_name = strip_name.replace("center_", "")
+        for entry in self.blacklist:
+            start_name = entry[0]
+            end_name = entry[1]
+            if start_name <= strip_name and strip_name <= end_name:
+                self.not_valid_count += 1
+                return False
+        return True
 
 
-def read_blacklist(parameters):
-    blacklist = []
-    fname = parameters.blacklist_fname
-    with open(fname) as csvfile:
-        reader = csv.reader(csvfile)
-        for line in reader:
-            line_str = "".join(line)
-            if len(line) == 0 or line_str[0] == "#":
-                continue
-            blacklist.append(line)
-    return blacklist
+class LogEntry:
+    def __init__(self, line, img_directory):
+        self.fname_center = os.path.join(img_directory, line[0].split("/")[-1])
+        self.fname_left = os.path.join(img_directory, line[1].split("/")[-1])
+        self.fname_right = os.path.join(img_directory, line[2].split("/")[-1])
+        self.steering_center = float(line[3])
+        self.throttle = float(line[4])
+        self.break_value = float(line[5])
+        self.speed = float(line[6])
+
+    def __str__(self):
+        res = ""
+        res += " - center: {}\n".format(self.fname_center)
+        res += " - left: {}\n".format(self.fname_left)
+        res += " - right: {}\n".format(self.fname_right)
+        res += " - steering angle: {:.2f} [-1.0, 1.0]\n".format(self.steering_center)
+        res += " - throttle: {:.2f} [0.0, 1.0]\n".format(self.throttle)
+        res += " - break: {:.2f} (always zero?)\n".format(self.break_value)
+        res += " - speed: {:.2f} [0.0, 30.0]\n".format(self.speed)
+        return res
 
 
-def is_in_blacklist(blacklist, fname):
-    strip_name = fname.split("/")[-1]
-    strip_name = strip_name.split(".")[0]
-    strip_name = strip_name.replace("center_", "")
-    for entry in blacklist:
-        start_name = entry[0]
-        end_name = entry[1]
-        if start_name <= strip_name and strip_name <= end_name:
-            return True
-    return False
+class DBLogReader:
+    def __init__(self, dataset_directory):
+        self.img_directory = os.path.join(dataset_directory, "IMG")
+        self.log_fname = os.path.join(dataset_directory, "driving_log.csv")
+        self.entries = []
+
+    def load(self):
+        print(" - Loading entries from log file: {}:".format(self.log_fname))
+        entries = []
+        try:
+            with open(self.log_fname) as csvfile:
+                reader = csv.reader(csvfile)
+                for line in reader:
+                    entries.append(LogEntry(line, self.img_directory))
+        except IOError as e:
+            print(" - !! Could not load csv: {}".format(self.fname))
+        self.entries = entries
+
+    def get_entries(self):
+        if not self.entries:
+            self.load()
+        return self.entries
 
 
-def load_dataset(parameters, set_name, debug=False):
-    print("Loading dataset: {}:".format(set_name))
+def get_dataset_samples(dataset_directory):
+    print("Loading dataset from path: {}:".format(dataset_directory))
 
-    images = []
-    measurements = []
+    # blacklist
+    blacklist = Blacklist(Parameters.BLACKLIST_FNAME)
 
-    img_basename = os.path.join(parameters.data_dir, set_name, "IMG")
-    csv_fname = os.path.join(parameters.data_dir, set_name, "driving_log.csv")
-    print("- Log file: {}:".format(csv_fname))
+    # csv
+    log_reader = DBLogReader(dataset_directory)
+    entries = log_reader.get_entries()
 
-    blacklist = read_blacklist(parameters)
-    blacklisted = []
-
-    csv_lines = read_from_csv(csv_fname)
-    for line in csv_lines:
-        fname_center = os.path.join(img_basename, line[0].split("/")[-1])
-        fname_left = os.path.join(img_basename, line[1].split("/")[-1])
-        fname_right = os.path.join(img_basename, line[2].split("/")[-1])
-        value_steering_angle = float(line[3])
-        value_throttle = float(line[4])
-        value_break = float(line[5])
-        value_speed = float(line[6])
-
-        if is_in_blacklist(blacklist, fname_center):
-            blacklisted.append(fname_center)
-            blacklisted.append(fname_left)
-            blacklisted.append(fname_right)
+    # load valid samples
+    samples = []
+    for entry in entries:
+        # skip blacklisted samples
+        if not blacklist.is_valid(entry.fname_center):
             continue
 
         # create adjusted steering measurements for the side camera images
-        correction = parameters.multicam_steering_correction
-        steering_center = value_steering_angle
-        steering_left = steering_center + correction
-        steering_right = steering_center - correction
+        steering_left = entry.steering_center + Parameters.MULTICAM_STEERING_CORRECTION
+        steering_right = entry.steering_center - Parameters.MULTICAM_STEERING_CORRECTION
 
-        # image = cv2.imread(image_fname)
-        image_center = ndimage.imread(fname_center)
-        image_left = ndimage.imread(fname_left)
-        image_right = ndimage.imread(fname_right)
+        # create samples
+        samples.append(Sample(entry.fname_center, entry.steering_center))
+        samples.append(Sample(entry.fname_left, steering_left))
+        samples.append(Sample(entry.fname_right, steering_right))
 
-        images.append(image_center)
-        images.append(image_left)
-        images.append(image_right)
-        measurements.append(steering_center)
-        measurements.append(steering_left)
-        measurements.append(steering_right)
-
-        if debug:
-            print("- center: {}".format(fname_center))
-            print("- left: {}".format(fname_left))
-            print("- right: {}".format(fname_right))
-            print("- steering angle: {:.2f} [-1.0, 1.0]".format(value_steering_angle))
-            print("- throttle: {:.2f} [0.0, 1.0]".format(value_throttle))
-            print("- break: {:.2f} (always zero?)".format(value_break))
-            print("- speed: {:.2f} [0.0, 30.0]".format(value_speed))
+        # limit samples
+        limit = Parameters.IMAGE_LIMIT_PER_SET
+        if limit and len(samples) >= limit:
             break
 
-        limit = parameters.IMAGE_LIMIT_PER_SET
-        if limit and len(images) >= limit:
-            break
+    print(" - Found #{} images.".format(len(entries)))
+    print(" - Will consider #{} of them.".format(len(samples)))
+    print(" - #{} are blacklisted.".format(blacklist.not_valid_count * 3))
+    print("")
+    return samples
 
-    if images:
-        print("- Total images: {}.".format(len(csv_lines)))
-        print(
-            "- Loaded #{} images, and other #{} are blacklisted.".format(
-                len(images), len(blacklisted)
-            )
+
+def load_datasets():
+    print("=" * 80)
+    print("Loading Datasets ...")
+    print("=" * 80)
+    all_samples = []
+    for dataset_name in Parameters.DATASETS:
+        dataset_directory = os.path.join(Parameters.DATA_DIR, dataset_name)
+        samples = get_dataset_samples(dataset_directory)
+        all_samples.extend(samples)
+
+    print(
+        "Using #{} images from #{} datasets.".format(
+            len(all_samples), len(Parameters.DATASETS)
         )
-    return images, measurements
-
-
-def load_datasets(parameters, debug=False):
-    print("=" * 80)
-    print("Datasets:")
-    print("=" * 80)
-    datasets = parameters.datasets
-
-    all_images = []
-    all_measurements = []
-    for dataset in datasets:
-        images, measurements = load_dataset(parameters, dataset, debug=debug)
-        all_images.extend(images)
-        all_measurements.extend(measurements)
-
+    )
     print("")
-    print("Loaded #{} images from #{} datasets.".format(len(all_images), len(datasets)))
-    print("")
-    return all_images, all_measurements
+    return all_samples
 
 
 if __name__ == "__main__":
-    from parameters import Parameters
-
-    parameters = Parameters()
-
     # single dataset
-    # images, measurements = load_dataset(parameters, parameters.datasets[0], debug=True)
+    dataset_directory = os.path.join(Parameters.DATA_DIR, Parameters.DATASETS[0])
+    samples = get_dataset_samples(dataset_directory)
 
     # all of them
-    images, measurements = load_datasets(parameters)
+    samples = load_datasets()

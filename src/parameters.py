@@ -1,36 +1,38 @@
 import os
 
 
+def get_this_dir():
+    return os.path.dirname(os.path.realpath(__file__))
+
+
+def get_project_path():
+    return os.path.realpath(get_this_dir() + "/..")
+
+
 class Parameters:
-    datasets = [
+
+    # datasets
+    # ------------------------------------------------------
+    DATA_DIR = os.path.join(get_project_path(), "data/")
+    BLACKLIST_FNAME = os.path.join(get_project_path(), "blacklist.txt")
+    DATASETS = [
         "track1_forward",
-        "track1_curves",
-        "track1_recovery",
-        "track1_reverse",
-        "track2_forward",
-        "track2_reverse",
+        #       "track1_curves",
+        #        "track1_recovery",
+        #        "track1_reverse",
+        #        "track2_forward",
+        #        "track2_reverse",
     ]
+    IMAGE_LIMIT_PER_SET = 1
 
-    multicam_steering_correction = 0.2
-    IMAGE_LIMIT_PER_SET = 50
-    N_EPOCHS = 2
+    # augmentation
+    # ------------------------------------------------------
+    MULTICAM_STEERING_CORRECTION = 0.2
 
-    def __init__(self):
-        this_dir = os.path.dirname(os.path.realpath(__file__))
-        self.project_path = os.path.realpath(this_dir + "/..")
-        self.blacklist_fname = os.path.join(self.project_path, "blacklist.txt")
-        self.data_dir = os.path.join(self.project_path, "data/")
-        # self.data_dir = "/opt/mpavezb/data/"
+    # training
+    # ------------------------------------------------------
+    N_EPOCHS = 3
+    BATCH_SIZE = 32
 
-        print("=" * 80)
-        print("Parameters:")
-        print("=" * 80)
-        print(" - Project Path: {}".format(self.project_path))
-        print(" - Blacklist file: {}".format(self.blacklist_fname))
-        print(" - Data Dir: {}".format(self.data_dir))
-        print(
-            " - Multicam Steering Correction: {}".format(
-                self.multicam_steering_correction
-            )
-        )
-        print("")
+    # Share of the db to be used for testing
+    DB_TEST_SPLIT_SIZE = 0.2
