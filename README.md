@@ -26,7 +26,7 @@ The goals / steps of this project are the following:
 
 ### Data, Model and Training
 
-Please read the [writeup report], were this is explained further.
+Please read the [writeup report](writeup_report.md), were this is explained further.
 
 ## Dependencies
 
