@@ -23,7 +23,7 @@ class Parameters:
         "track2_forward",
         "track2_reverse",
     ]
-    IMAGE_LIMIT_PER_SET = 100
+    IMAGE_LIMIT_PER_SET = None
 
     BASE_IMAGE_WIDTH = 320
     BASE_IMAGE_HEIGHT = 160

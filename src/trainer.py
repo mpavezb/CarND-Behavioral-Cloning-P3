@@ -13,6 +13,21 @@ from parameters import Parameters
 from data_loader import load_datasets
 from processing import split_samples, augment_samples, sample_generator
 
+
+def test_gpu_support():
+    import tensorflow as tf
+
+    with tf.device("/gpu:0"):
+        a = tf.constant([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], shape=[2, 3], name="a")
+        b = tf.constant([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], shape=[3, 2], name="b")
+        c = tf.matmul(a, b)
+
+    with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
+        devices = sess.list_devices()
+        print(devices)
+        print(sess.run(c))
+
+
 if __name__ == "__main__":
     # load and augment dataset
     samples = load_datasets()

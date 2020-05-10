@@ -16,22 +16,6 @@ class Sample:
     def flip_on_read(self):
         self.is_flipped = True
 
-    def load(self):
-        self.image = cv2.imread(self.fname)
-        self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
-        if self.is_flipped:
-            self.flip()
-
-    def flip(self):
-        self.image = cv2.flip(self.image, 1)
-        self.steering_angle = self.steering_angle * -1.0
-
-    def preprocess(self):
-        # trim image to only see section with road
-        ya = Parameters.IMAGE_CROP_TOP
-        yb = ya + Parameters.IMAGE_HEIGHT
-        self.image = self.image[ya:yb, :]
-
     def __str__(self):
         return (
             ""
@@ -67,10 +51,24 @@ def sample_generator(samples, batch_size=32):
             images = []
             angles = []
             for batch_sample in batch_samples:
-                batch_sample.load()
-                batch_sample.preprocess()
-                images.append(batch_sample.image)
-                angles.append(batch_sample.steering_angle)
+                # read image
+                image = cv2.imread(batch_sample.fname)
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+                # flip if needed
+                steering_angle = batch_sample.steering_angle
+                if batch_sample.is_flipped:
+                    image = cv2.flip(image, 1)
+                    steering_angle = steering_angle * -1.0
+
+                # trim image to only see section with road
+                ya = Parameters.IMAGE_CROP_TOP
+                yb = ya + Parameters.IMAGE_HEIGHT
+                image = image[ya:yb, :]
+
+                # save
+                images.append(image)
+                angles.append(steering_angle)
 
             X_train = np.array(images)
             y_train = np.array(angles)
