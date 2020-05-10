@@ -1,8 +1,8 @@
 import os.path
 import csv
 
-from parameters import Parameters
-from processing import Sample
+from src.parameters import Parameters
+from src.processing import Sample
 
 
 class Blacklist:
@@ -137,12 +137,3 @@ def load_datasets():
     )
     print("")
     return all_samples
-
-
-if __name__ == "__main__":
-    # single dataset
-    dataset_directory = os.path.join(Parameters.DATA_DIR, Parameters.DATASETS[0])
-    samples = get_dataset_samples(dataset_directory)
-
-    # all of them
-    samples = load_datasets()

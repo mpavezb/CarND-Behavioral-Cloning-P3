@@ -2,6 +2,19 @@
 
 [![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
+
+## Prerequisites
+
+- Python 3.5.2
+
+```bash
+sudo apt-get install python3-pip
+sudo apt-get install python3-venv
+
+python3 -m venv env/
+pip3 install -r requirements.txt
+
+
 Overview
 ---
 This repository contains starting files for the Behavioral Cloning Project.
