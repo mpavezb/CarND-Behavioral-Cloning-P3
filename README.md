@@ -5,7 +5,7 @@
 ## Shortcuts
 
 * [Writeup Report](writeup_report.md)
-* [Model creation and Training](model.py)
+* [Python model creation and training](model.py)
 * [Sample video](video.mp4)
 
 ## Overview
@@ -24,6 +24,9 @@ The goals / steps of this project are the following:
 * Use the model to drive the vehicle autonomously around the first track in the simulator. The vehicle should remain on the road for an entire loop around the track.
 * Summarize the results with a written report
 
+### Data, Model and Training
+
+Please read the [writeup report], were this is explained further.
 
 ## Dependencies
 
