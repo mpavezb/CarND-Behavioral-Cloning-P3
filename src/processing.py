@@ -7,6 +7,11 @@ from src.parameters import Parameters
 
 
 class Sample:
+    """
+    Represents a data sample to provide for training.
+    The actual image is not stored here, to avoid RAM explosion.
+    """
+
     def __init__(self, fname, steering_angle):
         self.fname = fname
         self.steering_angle = steering_angle

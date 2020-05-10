@@ -46,17 +46,6 @@ class LogEntry:
         self.break_value = float(line[5])
         self.speed = float(line[6])
 
-    def __str__(self):
-        res = ""
-        res += " - center: {}\n".format(self.fname_center)
-        res += " - left: {}\n".format(self.fname_left)
-        res += " - right: {}\n".format(self.fname_right)
-        res += " - steering angle: {:.2f} [-1.0, 1.0]\n".format(self.steering_center)
-        res += " - throttle: {:.2f} [0.0, 1.0]\n".format(self.throttle)
-        res += " - break: {:.2f} (always zero?)\n".format(self.break_value)
-        res += " - speed: {:.2f} [0.0, 30.0]\n".format(self.speed)
-        return res
-
 
 class DBLogReader:
     def __init__(self, dataset_directory):
