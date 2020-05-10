@@ -1,5 +1,4 @@
-import cv2
-import numpy as np
+from math import ceil
 
 from keras.layers import Convolution2D
 from keras.layers import Cropping2D
@@ -10,33 +9,30 @@ from keras.layers import MaxPooling2D
 from keras.models import Sequential
 
 
-from data_loader import load_dataset, load_datasets
 from parameters import Parameters
+from data_loader import load_datasets
+from processing import split_samples, augment_samples, sample_generator
 
 if __name__ == "__main__":
-    parameters = Parameters()
+    # load and augment dataset
+    samples = load_datasets()
+    samples = augment_samples(samples)
 
-    images, measurements = load_datasets(parameters)
+    # split and create batch generators for train and validation
+    train_samples, validation_samples = split_samples(samples)
+    train_generator = sample_generator(train_samples, Parameters.BATCH_SIZE)
+    validation_generator = sample_generator(validation_samples, Parameters.BATCH_SIZE)
 
-    # duplicate the data
-    # create balanced data set
-    augmented_images, augmented_measurements = [], []
-    for image, measurement in zip(images, measurements):
-        augmented_images.append(image)
-        augmented_measurements.append(measurement)
-
-        augmented_images.append(cv2.flip(image, 1))
-        augmented_measurements.append(measurement * -1.0)
-
-    X_train = np.array(augmented_images)
-    y_train = np.array(augmented_measurements)
-
+    # model definition
     model = Sequential()
-    model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape=(160, 320, 3)))
-    model.add(Cropping2D(cropping=((70, 25), (0, 0))))
+    model.add(
+        Lambda(
+            lambda x: (x / 255.0) - 0.5,
+            input_shape=(Parameters.IMAGE_HEIGHT, Parameters.IMAGE_WIDTH, 3),
+        )
+    )
 
     MODEL_TYPE = "nvidia"
-
     # LeNet
     if MODEL_TYPE == "lenet":
         model.add(Convolution2D(6, (5, 5), activation="relu"))
@@ -60,7 +56,12 @@ if __name__ == "__main__":
         model.add(Dense(1))
 
     model.compile(loss="mse", optimizer="adam")
-    model.fit(
-        X_train, y_train, validation_split=0.2, shuffle=True, epochs=parameters.N_EPOCHS
+    model.fit_generator(
+        train_generator,
+        validation_data=validation_generator,
+        steps_per_epoch=ceil(len(train_samples) / Parameters.BATCH_SIZE),
+        validation_steps=ceil(len(validation_samples) / Parameters.BATCH_SIZE),
+        epochs=Parameters.N_EPOCHS,
+        verbose=1,
     )
     model.save("model.h5")

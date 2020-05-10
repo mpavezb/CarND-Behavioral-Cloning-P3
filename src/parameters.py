@@ -17,16 +17,26 @@ class Parameters:
     BLACKLIST_FNAME = os.path.join(get_project_path(), "blacklist.txt")
     DATASETS = [
         "track1_forward",
-        #       "track1_curves",
-        #        "track1_recovery",
-        #        "track1_reverse",
-        #        "track2_forward",
-        #        "track2_reverse",
+        "track1_curves",
+        "track1_recovery",
+        "track1_reverse",
+        "track2_forward",
+        "track2_reverse",
     ]
-    IMAGE_LIMIT_PER_SET = 1
+    IMAGE_LIMIT_PER_SET = 100
 
-    # augmentation
+    BASE_IMAGE_WIDTH = 320
+    BASE_IMAGE_HEIGHT = 160
+
+    # preprocessing
     # ------------------------------------------------------
+    IMAGE_CROP_TOP = 70
+    IMAGE_CROP_BOTTOM = 25
+    IMAGE_HEIGHT = BASE_IMAGE_HEIGHT - IMAGE_CROP_TOP - IMAGE_CROP_BOTTOM
+    IMAGE_WIDTH = BASE_IMAGE_WIDTH
+
+    # ------------------------------------------------------
+    # augmentation
     MULTICAM_STEERING_CORRECTION = 0.2
 
     # training
